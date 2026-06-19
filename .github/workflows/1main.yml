@@ -30,16 +30,28 @@ jobs:
           TRIPLET=i686-w64-mingw32
         fi
         
-        # 1. Explicitly create the build folder FIRST
+        # 1. Dynamically locate the C++ file if names are misaligned or capitalised
+        TARGET_SOURCE=$(find . -iname "d3d11_proxy.cpp" | head -n 1)
+        
+        if [ -z "$TARGET_SOURCE" ]; then
+          echo "ERROR: Could not find any file named d3d11_proxy.cpp anywhere in the repo!"
+          echo "Here are the files currently present:"
+          find . -maxdepth 3 -not -path '*/.*'
+          exit 1
+        fi
+        
+        echo "Found source file at: $TARGET_SOURCE"
+        
+        # 2. Setup safe build folder paths
         mkdir -p build/${{ matrix.arch }}
         
-        # 2. Compile directly into the targeted output directory
+        # 3. Direct compile execution
         ${TRIPLET}-g++ \
           -shared -o build/${{ matrix.arch }}/d3d11.dll \
           -DWIN32_LEAN_AND_MEAN \
           -municode \
           -I /usr/${TRIPLET}/include \
-          "${GITHUB_WORKSPACE}/src/d3d11_proxy.cpp" \
+          "$TARGET_SOURCE" \
           -L /usr/${TRIPLET}/lib -ld3d11 -ldxgi \
           -Wl,--kill-at
 
