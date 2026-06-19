@@ -1,0 +1,1 @@
+This DX11 DLL file spoofs your GPU's DirectX feature level. If your graphics card doesn't natively support DirectX 11, placing this file into the game's directory will allow it to run. However, please note that performance will likely be poor; this is a limitation of your older hardware, not an issue with the DLL itself.
