@@ -1,0 +1,50 @@
+name: Build d3d11-spoof
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        arch: [ x86_64, i686 ]
+
+    steps:
+    - name: Check out repo
+      uses: actions/checkout@v4
+
+    - name: Install MinGW-w64
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y mingw-w64
+
+    - name: Compile for ${{ matrix.arch }}
+      run: |
+        if [ "${{ matrix.arch }}" = "x86_64" ]; then
+          TRIPLET=x86_64-w64-mingw32
+        else
+          TRIPLET=i686-w64-mingw32
+        fi
+        
+        # 1. Explicitly create the build folder FIRST
+        mkdir -p build/${{ matrix.arch }}
+        
+        # 2. Compile directly into the targeted output directory
+        ${TRIPLET}-g++ \
+          -shared -o build/${{ matrix.arch }}/d3d11.dll \
+          -DWIN32_LEAN_AND_MEAN \
+          -municode \
+          -I /usr/${TRIPLET}/include \
+          "${GITHUB_WORKSPACE}/src/d3d11_proxy.cpp" \
+          -L /usr/${TRIPLET}/lib -ld3d11 -ldxgi \
+          -Wl,--kill-at
+
+    - name: Upload Artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: d3d11-spoof-${{ matrix.arch }}
+        path: build/${{ matrix.arch }}/d3d11.dll
